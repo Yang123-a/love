@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>克苏鲁 · 诡异打字游戏</title>
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Microsoft Yahei", sans-serif;
+}
+body {
+  background: #050308;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow: hidden;
+  color: #6aff9e;
+  background-image: radial-gradient(circle at 50% 50%, #1a0a18 0%, #050308 70%);
+  min-height: 100vh;
+  padding: 10px 0;
+}
+#gameCanvas {
+  border: 2px solid #5a2b55;
+  box-shadow: 0 0 30px #7a3b75, 0 0 60px #3a1a35;
+  max-width: 100%;
+  height: auto;
+}
+.info-bar {
+  width: 90%;
+  max-width: 800px;
+  font-size: clamp(14px, 4vw, 18px);
+  padding: 8px 0;
+  display: flex;
+  justify-content: space-around;
+  text-shadow: 0 0 8px #6aff9e;
+  background: rgba(30,10,25,0.5);
+  border-radius: 8px;
+  margin-bottom: 5px;
+  border: 1px solid #5a2b55;
+}
+.ctrl-btn {
+  margin: 8px 5px;
+  padding: 8px 24px;
+  background: transparent;
+  border: 1px solid #6aff9e;
+  color: #6aff9e;
+  border-radius: 6px;
+  cursor: pointer;
+  text-shadow: 0 0 5px #6aff9e;
+  transition: 0.3s;
+  font-size: clamp(14px, 3vw, 16px);
+}
+.ctrl-btn:hover, .ctrl-btn:active {
+  background: #6aff9e;
+  color: #050308;
+  box-shadow: 0 0 15px #6aff9e;
+}
+.keyboard {
+  margin-top: 10px;
+  display: grid;
+  gap: 5px;
+  width: 95%;
+  max-width: 800px;
+}
+.key-row {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+  width: 100%;
+}
+.key {
+  flex: 1;
+  min-width: 30px;
+  height: clamp(40px, 10vw, 50px);
+  line-height: clamp(40px, 10vw, 50px);
+  text-align: center;
+  border: 1px solid #5a2b55;
+  border-radius: 5px;
+  background: rgba(40,15,35,0.4);
+  text-shadow: 0 0 5px #9f6899;
+  transition: 0.15s;
+  color: #c99fc4;
+  font-size: clamp(16px, 4vw, 18px);
+  touch-action: manipulation;
+}
+.key.active {
+  background: #6aff9e;
+  color: #050308;
+  box-shadow: 0 0 12px #6aff9e;
+  border-color: #6aff9e;
+}
+.key.backspace {
+  flex: 1.5;
+  font-size: clamp(12px, 3vw, 14px);
+}
+.key.enter {
+  flex: 1.5;
+  font-size: clamp(12px, 3vw, 14px);
+}
+#startMask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(5,3,8,0.95);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 99;
+  padding: 20px;
+}
+#startMask h2 {
+  font-size: clamp(28px, 8vw, 42px);
+  margin-bottom: 30px;
+  text-shadow: 0 0 15px #7a3b75, 0 0 30px #6aff9e;
+  letter-spacing: 4px;
+  color: #c99fc4;
+  text-align: center;
+}
+#startBtn {
+  padding: 15px 45px;
+  font-size: clamp(18px, 5vw, 20px);
+  border: 1px solid #6aff9e;
+  color: #6aff9e;
+  background: transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.3s;
+  touch-action: manipulation;
+}
+#startBtn:hover, #startBtn:active {
+  background: #6aff9e;
+  color: #050308;
+  box-shadow: 0 0 20px #6aff9e;
+}
+/* 适配小屏幕手机 */
+@media (max-width: 480px) {
+  .key-row {
+    gap: 3px;
+  }
+  .key {
+    min-width: 25px;
+    height: clamp(35px, 10vw, 45px);
+    line-height: clamp(35px, 10vw, 45px);
+  }
+  .info-bar {
+    flex-wrap: wrap;
+    gap: 5px;
+    padding: 8px;
+  }
+  .info-bar span {
+    width: 45%;
+    text-align: center;
+  }
+}
+</style>
+</head>
+<body>
+
+<div id="startMask">
+  <h2>旧日支配 · 克苏鲁打字</h2>
+  <button id="startBtn">踏入深渊</button>
+</div>
+
+<div class="info-bar">
+  <span>分数：<span id="score">0</span></span>
+  <span>层级：<span id="level">1</span></span>
+  <span>理智：<span id="hp">100</span></span>
+  <span>最高记录：<span id="maxScore">0</span></span>
+</div>
+
+<canvas id="gameCanvas"></canvas>
+
+<div>
+  <button class="ctrl-btn" id="pauseBtn">停滞</button>
+  <button class="ctrl-btn" id="restartBtn">重置理智</button>
+</div>
+
+<div class="keyboard">
+  <div class="key-row">
+    <div class="key">Q</div><div class="key">W</div><div class="key">E</div><div class="key">R</div><div class="key">T</div>
+    <div class="key">Y</div><div class="key">U</div><div class="key">I</div><div class="key">O</div><div class="key">P</div>
+  </div>
+  <div class="key-row">
+    <div class="key">A</div><div class="key">S</div><div class="key">D</div><div class="key">F</div><div class="key">G</div>
+    <div class="key">H</div><div class="key">J</div><div class="key">K</div><div class="key">L</div>
+  </div>
+  <div class="key-row">
+    <div class="key">Z</div><div class="key">X</div><div class="key">C</div><div class="key">V</div><div class="key">B</div>
+    <div class="key">N</div><div class="key">M</div>
+    <div class="key backspace">删除</div>
+  </div>
+  <div class="key-row">
+    <div class="key enter">确认</div>
+  </div>
+</div>
+
+<script>
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function playSound(type){
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  if(type === 'key'){
+    osc.frequency.value = 260;
+    gain.gain.value = 0.08;
+    osc.start();
+    osc.stop(0.05);
+  }else if(type === 'ok'){
+    osc.frequency.value = 420;
+    gain.gain.value = 0.1;
+    osc.start();
+    setTimeout(()=>{osc.frequency.value=580;},80);
+    osc.stop(0.15);
+  }else if(type === 'err'){
+    osc.frequency.value = 150;
+    gain.gain.value = 0.12;
+    osc.start();
+    osc.stop(0.12);
+  }else if(type === 'levelUp'){
+    osc.frequency.value = 380;
+    gain.gain.value = 0.1;
+    osc.start();
+    setTimeout(()=>{osc.frequency.value=520;},100);
+    setTimeout(()=>{osc.frequency.value=650;},200);
+    osc.stop(0.3);
+  }
+}
+
+// 适配Canvas尺寸
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+function resizeCanvas() {
+  const width = Math.min(window.innerWidth * 0.9, 800);
+  const height = (width / 800) * 500;
+  canvas.width = width;
+  canvas.height = height;
+  
+  // 重新初始化粒子
+  stars = [];
+  for(let i=0;i<Math.floor(120 * (width/800));i++) stars.push(new Star());
+}
+// 初始化Canvas尺寸
+resizeCanvas();
+window.addEventListener('resize', () => {
+  if(gameStart && !gamePause) {
+    resizeCanvas();
+  }
+});
+
+const startMask = document.getElementById('startMask');
+const startBtn = document.getElementById('startBtn');
+const pauseBtn = document.getElementById('pauseBtn');
+const restartBtn = document.getElementById('restartBtn');
+const scoreDom = document.getElementById('score');
+const levelDom = document.getElementById('level');
+const hpDom = document.getElementById('hp');
+const maxScoreDom = document.getElementById('maxScore');
+const keys = document.querySelectorAll('.key');
+
+let gameStart = false;
+let gamePause = false;
+let score = 0;
+let level = 1;
+let hp = 100;
+let inputStr = "";
+let maxScore = localStorage.getItem('typingMaxScore') || 0;
+maxScoreDom.innerText = maxScore;
+
+const wordLibShort = ["cult","myth","dark","void","evil","ghost","fate","doom","rite"];
+const wordLibMid = ["cthulhu","abyss","horror","shadow","ancient","temple","curse","cosmic"];
+const wordLibLong = ["sleeper","dreadful","madness","eternal","nameless","forgotten","ritual"];
+let lastWord = "";
+
+// 克苏鲁诡异迷雾粒子
+let stars = [];
+class Star {
+  constructor(){
+    this.x = Math.random()*canvas.width;
+    this.y = Math.random()*canvas.height;
+    this.r = Math.random()*1.2+0.3;
+    this.speed = Math.random()*0.25+0.05;
+    this.color = Math.random()>0.5 ? '#7a3b75' : '#6aff9e';
+    this.alpha = Math.random()*0.5+0.2;
+  }
+  update(){
+    this.y += this.speed;
+    if(this.y>canvas.height){
+      this.y = 0;
+      this.x = Math.random()*canvas.width;
+    }
+  }
+  draw(){
+    ctx.beginPath();
+    ctx.arc(this.x,this.y,this.r,0,Math.PI*2);
+    ctx.fillStyle = this.color;
+    ctx.globalAlpha = this.alpha;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+}
+
+let dropWord = "";
+let wordX = 0;
+let wordY = 0;
+let nowSpeed = 0.5;
+
+function getRandomWord(){
+  let arr;
+  if(level <= 2) arr = wordLibShort;
+  else if(level <= 4) arr = wordLibMid;
+  else arr = wordLibLong;
+  let word;
+  do{
+    word = arr[Math.floor(Math.random()*arr.length)];
+  }while(word === lastWord);
+  lastWord = word;
+  return word;
+}
+
+function newWord(){
+  dropWord = getRandomWord();
+  wordX = 60 * (canvas.width/800) + Math.random()*(canvas.width - 180 * (canvas.width/800));
+  wordY = 0;
+  nowSpeed = 0.5 + level * 0.25;
+  // 适配不同屏幕的下落速度
+  nowSpeed = nowSpeed * (canvas.width/800);
+  inputStr = "";
+}
+
+function updateUI(){
+  scoreDom.innerText = score;
+  levelDom.innerText = level;
+  hpDom.innerText = hp;
+}
+
+startBtn.onclick = ()=>{
+  startMask.style.display = 'none';
+  gameStart = true;
+  newWord();
+  gameLoop();
+  // 解锁音频上下文（移动端需要用户交互）
+  audioCtx.resume();
+};
+
+pauseBtn.onclick = ()=>{
+  if(!gameStart) return;
+  gamePause = !gamePause;
+  pauseBtn.innerText = gamePause ? '继续' : '停滞';
+};
+
+restartBtn.onclick = ()=>{
+  score = 0;
+  level = 1;
+  hp = 100;
+  inputStr = "";
+  gamePause = false;
+  pauseBtn.innerText = '停滞';
+  newWord();
+  updateUI();
+};
+
+// 键盘按键处理
+function handleKeyPress(key) {
+  if(!gameStart || gamePause) return;
+  
+  if(key === 'backspace'){
+    inputStr = inputStr.slice(0,-1);
+    playSound('key');
+  }else if(key === 'enter'){
+    if(inputStr === dropWord){
+      score += 10;
+      if(score % 50 === 0){
+        level++;
+        playSound('levelUp');
+      }else{
+        playSound('ok');
+      }
+      if(score > maxScore){
+        maxScore = score;
+        localStorage.setItem('typingMaxScore',maxScore);
+        maxScoreDom.innerText = maxScore;
+      }
+      newWord();
+    }else{
+      playSound('err');
+    }
+  }else if(/^[a-zA-Z]$/.test(key)){
+    inputStr += key.toLowerCase();
+    playSound('key');
+  }
+}
+
+// 监听物理键盘
+document.addEventListener('keydown', e=>{
+  if(!gameStart || gamePause) return;
+  
+  if(/^[a-zA-Z]$/.test(e.key)){
+    handleKeyPress(e.key);
+    keys.forEach(k=>{
+      if(k.innerText === e.key.toUpperCase()) k.classList.add('active');
+    });
+  }
+  if(e.key === 'Backspace'){
+    handleKeyPress('backspace');
+    document.querySelector('.backspace').classList.add('active');
+  }
+  if(e.key === 'Enter'){
+    handleKeyPress('enter');
+    document.querySelector('.enter').classList.add('active');
+  }
+});
+
+document.addEventListener('keyup',()=>{
+  keys.forEach(k=>k.classList.remove('active'));
+});
+
+// 触摸键盘支持
+keys.forEach(key => {
+  key.addEventListener('touchstart', (e) => {
+    e.preventDefault(); // 防止滚动
+    key.classList.add('active');
+    let keyValue = key.innerText;
+    if(keyValue === '删除'){
+      handleKeyPress('backspace');
+    }else if(keyValue === '确认'){
+      handleKeyPress('enter');
+    }else{
+      handleKeyPress(keyValue);
+    }
+  });
+  
+  key.addEventListener('touchend', () => {
+    key.classList.remove('active');
+  });
+  
+  // 鼠标支持
+  key.addEventListener('mousedown', () => {
+    key.classList.add('active');
+    let keyValue = key.innerText;
+    if(keyValue === '删除'){
+      handleKeyPress('backspace');
+    }else if(keyValue === '确认'){
+      handleKeyPress('enter');
+    }else{
+      handleKeyPress(keyValue);
+    }
+  });
+  
+  key.addEventListener('mouseup', () => {
+    key.classList.remove('active');
+  });
+  
+  key.addEventListener('mouseleave', () => {
+    key.classList.remove('active');
+  });
+});
+
+function drawMatchWord(){
+  // 适配不同屏幕的字体大小
+  const fontSize = Math.max(20, 32 * (canvas.width/800));
+  ctx.font = `${fontSize}px Microsoft Yahei`;
+  ctx.textAlign = 'left';
+  ctx.shadowBlur = 18;
+  
+  const charWidth = 20 * (canvas.width/800);
+  
+  for(let i=0;i<dropWord.length;i++){
+    let char = dropWord[i];
+    let inputChar = inputStr[i];
+    if(inputChar === undefined){
+      ctx.fillStyle = '#9f6899';
+      ctx.shadowColor = '#7a3b75';
+    }else if(inputChar === char){
+      ctx.fillStyle = '#6aff9e';
+      ctx.shadowColor = '#6aff9e';
+    }else{
+      ctx.fillStyle = '#bb4444';
+      ctx.shadowColor = '#992222';
+    }
+    ctx.fillText(char, wordX + i*charWidth, wordY);
+  }
+  ctx.shadowBlur = 0;
+}
+
+function gameLoop(){
+  if(gamePause){
+    requestAnimationFrame(gameLoop);
+    return;
+  }
+  ctx.fillStyle = 'rgba(5,3,8,0.15)';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  stars.forEach(s=>{s.update();s.draw();});
+
+  wordY += nowSpeed;
+
+  if(wordY > canvas.height - 40 * (canvas.height/500)){
+    hp -= 15;
+    updateUI();
+    newWord();
+    if(hp <= 0){
+      ctx.fillStyle = '#bb4444';
+      ctx.font = `${Math.max(30, 60 * (canvas.width/800))}px Microsoft Yahei`;
+      ctx.textAlign = 'center';
+      ctx.shadowColor = '#992222';
+      ctx.shadowBlur = 25;
+      ctx.fillText('理智崩坏', canvas.width/2, canvas.height/2);
+      return;
+    }
+  }
+
+  drawMatchWord();
+  ctx.fillStyle = '#6aff9e';
+  ctx.font = `${Math.max(18, 28 * (canvas.width/800))}px Microsoft Yahei`;
+  ctx.textAlign = 'left';
+  ctx.fillText('低语：' + inputStr, 30 * (canvas.width/800), canvas.height - 30 * (canvas.height/500));
+
+  updateUI();
+  requestAnimationFrame(gameLoop);
+}
+
+// 初始化粒子
+for(let i=0;i<120;i++) stars.push(new Star());
+</script>
+</body>
+</html>
