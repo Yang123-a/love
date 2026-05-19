@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>趣味猜谜语</title>
+    <style>
+        *{
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "微软雅黑", sans-serif;
+        }
+        body{
+            min-height: 100vh;
+            background: linear-gradient(120deg, #a1c4fd, #c2e9fb);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .game-box{
+            width: 500px;
+            background: #fff;
+            border-radius: 20px;
+            padding: 35px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+        }
+        h2{
+            text-align: center;
+            color: #2c5282;
+            margin-bottom: 25px;
+            font-size: 26px;
+        }
+        .score-box{
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            font-size: 16px;
+            color: #555;
+        }
+        .riddle-box{
+            background: #f0f7ff;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            min-height: 120px;
+        }
+        .riddle-text{
+            font-size: 18px;
+            line-height: 1.8;
+            color: #333;
+        }
+        .input-area{
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        #answer{
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            outline: none;
+            transition: 0.3s;
+        }
+        #answer:focus{
+            border-color: #60a5fa;
+        }
+        .btn{
+            padding: 12px 22px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .submit-btn{
+            background: #3b82f6;
+            color: #fff;
+        }
+        .submit-btn:hover{
+            background: #2563eb;
+        }
+        .next-btn{
+            background: #10b981;
+            color: #fff;
+        }
+        .next-btn:hover{
+            background: #059669;
+        }
+        .tip-text{
+            text-align: center;
+            font-size: 16px;
+            height: 24px;
+            margin: 10px 0;
+        }
+        .right{
+            color: #16a34a;
+        }
+        .wrong{
+            color: #ef4444;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-box">
+        <h2>趣味猜谜语</h2>
+        <div class="score-box">
+            <span>总分：<span id="totalScore">0</span> 分</span>
+            <span>答对：<span id="rightNum">0</span> 题</span>
+        </div>
+        <div class="riddle-box">
+            <p class="riddle-text" id="riddle">正在加载谜语...</p>
+        </div>
+        <p class="tip-text" id="tip"></p>
+        <div class="input-area">
+            <input type="text" id="answer" placeholder="请输入你的答案">
+            <button class="btn submit-btn" onclick="checkAnswer()">提交</button>
+        </div>
+        <div style="text-align: center;">
+            <button class="btn next-btn" onclick="nextRiddle()">下一题</button>
+        </div>
+    </div>
+
+<script>
+    const riddleList = [
+        {q:"弯弯藤儿架上爬，串串珍珠上边挂。（打一水果）",a:"葡萄"},
+        {q:"耳朵长，尾巴短，红眼睛，白毛衫。（打一动物）",a:"兔子"},
+        {q:"屋子方方，有门没窗，屋外热烘，屋里冰霜。（打一家电）",a:"冰箱"},
+        {q:"头戴红帽子，身披五彩衣，从来不唱戏，喜欢吊嗓子。（打一动物）",a:"公鸡"},
+        {q:"小小诸葛亮，独坐中军帐，摆下八卦阵，专捉飞来将。（打一昆虫）",a:"蜘蛛"},
+        {q:"千条线，万条线，落到水里看不见。（打一自然现象）",a:"雨"},
+        {q:"白白一片似雪花，落下水里不见它。（打一调料）",a:"盐"},
+        {q:"年纪并不大，胡子一大把，不论遇见谁，总爱喊妈妈。（打一动物）",a:"羊"},
+        {q:"身穿绿衣裳，肚里水汪汪，生的子儿多，个个黑脸膛。（打一水果）",a:"西瓜"},
+        {q:"有风不动无风动，不动无风动有风。（打一物）",a:"扇子"},
+        {q:"兄弟几个真和气，天天并肩坐一起，少时喜欢绿衣服，老来都穿黄色衣。（打一水果）",a:"香蕉"},
+        {q:"胖娃娃，滑手脚，红尖嘴儿一身毛，背上浅浅一道沟，肚里血红好味道。（打一水果）",a:"桃子"},
+        {q:"四季常青绿，只是花开难，摊开一只手，尖针已扎满。（打一植物）",a:"仙人掌"},
+        {q:"用手抓不住，用刀劈不开，煮饭和洗衣，都要请它来。（打一自然物）",a:"水"},
+        {q:"白天一到芬芳断，夜晚香味飘散远，飞虫闻味来传粉，秘密皆在花瓣间。（打一花）",a:"夜来香"},
+        {q:"一根小棍五寸长，一头有毛一头光，出来就爱讲卫生，天天嘴里走两趟。（打一物品）",a:"牙刷"},
+        {q:"驼背公公，力大无穷，爱驮什么，车水马龙。（打一建筑）",a:"桥"},
+        {q:"独木造高楼，没瓦没砖头，人在水下走，水在人上流。（打一用品）",a:"雨伞"},
+        {q:"颜色白如雪，身子硬如铁，一日洗三遍，夜晚柜中歇。（打一厨具）",a:"碗"},
+        {q:"圆筒白浆糊，早晚挤一股，兄弟三十二，都说有好处。（打一生活用品）",a:"牙膏"},
+        {q:"身穿大皮袄，野草吃个饱，过了严冬天，献出一身毛。（打一动物）",a:"绵羊"},
+        {q:"一个小姑娘，生在水中央，身穿粉红衫，坐在绿船上。（打一花）",a:"荷花"},
+        {q:"颜色青又黄，味道酸又香，浑身都是刺，吃它要小心。（打一水果）",a:"榴莲"},
+        {q:"小小坛子，装满饺子，吃掉饺子，吐出珠子。（打一水果）",a:"橘子"},
+        {q:"五个兄弟，住在一起，名字不同，高矮不齐。（打一人体器官）",a:"手指"},
+        {q:"人脱衣服，它穿衣服，人脱帽子，它戴帽子。（打一家具）",a:"衣架"},
+        {q:"不怕你多小，有它能看到，化验需要它，科研不可少。（打一物）",a:"显微镜"},
+        {q:"尖嘴尖牙齿，留着小胡子，贼头又贼脑，夜里干坏事。（打一动物）",a:"老鼠"},
+        {q:"身子像个小逗点，摇着一根小尾巴，从小就会吃孑孓，长大吃虫叫哇哇。（打一动物）",a:"蝌蚪"},
+        {q:"小小姑娘满身黑，秋去江南春来归，从小立志除害虫，身带剪刀满天飞。（打一动物）",a:"燕子"},
+        {q:"唱歌不用嘴，声音真清脆，嘴尖像根锥，专吸树枝水。（打一昆虫）",a:"蝉"},
+        {q:"背着包袱不肯走，表面坚强内里柔，行动迟缓不拖拉，碰到困难就缩头。（打一动物）",a:"蜗牛"},
+        {q:"一条牛，真厉害，猛兽见它也避开，它的皮厚毛稀少，长出角来当药材。（打一动物）",a:"犀牛"},
+        {q:"小货郎，不挑担，背着针，满处窜。（打一动物）",a:"刺猬"},
+        {q:"小飞机，纱翅膀，飞来飞去灭虫忙，低飞雨，高飞睛，气象预报它内行。（打一昆虫）",a:"蜻蜓"},
+        {q:"胡子两边翘，开口喵喵叫，夜里走路不带灯，捕捉老鼠本领高。（打一动物）",a:"猫"},
+        {q:"弯弯一座彩色桥，高高挂在半山腰，七色鲜艳真正好，一会儿工夫不见了。（打一自然景象）",a:"彩虹"},
+        {q:"说象糖，它不甜，说象盐，又不咸，冬天有时一片，夏天谁都不见。（打一自然物）",a:"雪"},
+        {q:"小白花，飞满天，下到地上象白面，下到水里看不见。（打一自然现象）",a:"雪"},
+        {q:"我到处乱跑，谁也捉不到，我跑过树林，树木都弯腰，我跑过大海，大海波浪高。（打一自然物）",a:"风"},
+        {q:"弯弯月儿夜渐浓，月光伴云雾重重，十里之外无人影，手中摇扇伴凉风。（打一物）",a:"扇子"},
+        {q:"远看像座山，近看不是山，上边水直流，下边有人走。（打一景物）",a:"瀑布"},
+        {q:"无脚也无手，身穿鸡皮皱，谁若碰着它，吓得连忙走。（打一动物）",a:"蛇"},
+        {q:"小时穿黑衣，大时穿绿袍，水里过日子，岸上来睡觉。（打一动物）",a:"青蛙"},
+        {q:"性子像鸭水里游，样子像鸟天上飞，游玩休息成双对，夫妻恩爱永不离。（打一动物）",a:"鸳鸯"},
+        {q:"头戴花冠鸟中少，身穿锦袍好夸耀，尾巴似扇能收展，尾羽开屏真俊俏。（打一动物）",a:"孔雀"},
+        {q:"嘴像小铲子，脚像小扇子，走路左右摆，水上划船子。（打一动物）",a:"鸭子"},
+        {q:"身体肥，头儿大，脸儿长方宽嘴巴，名字叫马却没毛，常在水中度生涯。（打一动物）",a:"河马"},
+        {q:"一物像人又像狗，爬杆上树是能手，擅长模仿人动作，家里没有山里有。（打一动物）",a:"猴子"},
+        {q:"身子粗粗壮壮，头上长长胡子，生来脾气暴躁，爱在水里泡澡。（打一动物）",a:"水牛"},
+        {q:"头顶双叉角，身穿黄花袍，跑起路来快，最爱吃青草。（打一动物）",a:"梅花鹿"}
+    ];
+
+    let nowIndex = 0;
+    let score = 0;
+    let rightCount = 0;
+    let isAnswered = false;
+
+    window.onload = function(){
+        showRiddle();
+    }
+
+    function showRiddle(){
+        isAnswered = false;
+        document.getElementById('tip').innerText = "";
+        document.getElementById('answer').value = "";
+        document.getElementById('riddle').innerText = riddleList[nowIndex].q;
+    }
+
+    function checkAnswer(){
+        if(isAnswered) return;
+        let userAns = document.getElementById('answer').value.trim();
+        let realAns = riddleList[nowIndex].a;
+        let tipDom = document.getElementById('tip');
+
+        if(!userAns){
+            tipDom.innerText = "请输入答案哦！";
+            tipDom.className = "tip-text wrong";
+            return;
+        }
+
+        isAnswered = true;
+        if(userAns === realAns){
+            tipDom.innerText = "🎉 回答正确！";
+            tipDom.className = "tip-text right";
+            score += 10;
+            rightCount++;
+            updateData();
+        }else{
+            tipDom.innerText = `❌ 答错啦，正确答案是：${realAns}`;
+            tipDom.className = "tip-text wrong";
+        }
+    }
+
+    function nextRiddle(){
+        nowIndex++;
+        if(nowIndex >= riddleList.length){
+            alert(`游戏结束！\n一共答对${rightCount}题，总得分：${score}分`);
+            nowIndex = 0;
+            score = 0;
+            rightCount = 0;
+            updateData();
+        }
+        showRiddle();
+    }
+
+    function updateData(){
+        document.getElementById('totalScore').innerText = score;
+        document.getElementById('rightNum').innerText = rightCount;
+    }
+</script>
+</body>
+</html>
